@@ -85,6 +85,7 @@ class Native
             V::key('settings', $setting),
             V::key('provider', V::in($this->providers)),
             V::key('client_id', V::stringType()->notEmpty()),
+            V::key('scopes', V::stringType()->notEmpty()),
             V::key('email_address', V::email()),
             V::keyOptional('reauth_account_id', V::stringType()->notEmpty())
         );

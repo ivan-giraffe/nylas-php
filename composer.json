@@ -1,11 +1,15 @@
 {
-    "name": "lanlin/nylas-php",
+    "name": "ivan-giraffe/nylas-php",
     "description": "Nylas PHP SDK (api version 2.0)",
     "license": "MIT",
     "authors" : [
         {
           "name": "lanlin",
           "email": "lanlin1987@gmail.com"
+        },
+        {
+            "name": "IvanGiraffe",
+            "email": "ivan.novotnyi@giraffesoftware.com"
         }
     ],
     "require": {
