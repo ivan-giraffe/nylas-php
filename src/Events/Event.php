@@ -57,10 +57,10 @@ class Event
         $header = ['Authorization' => $accessToken];
 
         return $this->options
-        ->getSync()
-        ->setQuery($params)
-        ->setHeaderParams($header)
-        ->get(API::LIST['events']);
+            ->getSync()
+            ->setQuery($params)
+            ->setHeaderParams($header)
+            ->get(API::LIST['events']);
     }
 
     // ------------------------------------------------------------------------------
@@ -85,11 +85,11 @@ class Event
         unset($params['notify_participants']);
 
         return $this->options
-        ->getSync()
-        ->setQuery($query)
-        ->setFormParams($params)
-        ->setHeaderParams($header)
-        ->post(API::LIST['events']);
+            ->getSync()
+            ->setQuery($query)
+            ->setFormParams($params)
+            ->setHeaderParams($header)
+            ->post(API::LIST['events']);
     }
 
     // ------------------------------------------------------------------------------
@@ -115,12 +115,12 @@ class Event
         unset($params['id'], $params['notify_participants']);
 
         return $this->options
-        ->getSync()
-        ->setPath($path)
-        ->setQuery($query)
-        ->setFormParams($params)
-        ->setHeaderParams($header)
-        ->put(API::LIST['oneEvent']);
+            ->getSync()
+            ->setPath($path)
+            ->setQuery($query)
+            ->setFormParams($params)
+            ->setHeaderParams($header)
+            ->put(API::LIST['oneEvent']);
     }
 
     // ------------------------------------------------------------------------------
@@ -154,11 +154,11 @@ class Event
         unset($params['notify_participants']);
 
         return $this->options
-        ->getSync()
-        ->setQuery($query)
-        ->setFormParams($params)
-        ->setHeaderParams($header)
-        ->post(API::LIST['oneEvent']);
+            ->getSync()
+            ->setQuery($query)
+            ->setFormParams($params)
+            ->setHeaderParams($header)
+            ->post(API::LIST['oneEvent']);
     }
 
     // ------------------------------------------------------------------------------
@@ -190,10 +190,10 @@ class Event
             unset($item['id']);
 
             $request = $this->options
-            ->getAsync()
-            ->setPath($id)
-            ->setFormParams($item)
-            ->setHeaderParams($header);
+                ->getAsync()
+                ->setPath($id)
+                ->setFormParams($item)
+                ->setHeaderParams($header);
 
             $queues[] = function () use ($request, $target)
             {
@@ -228,6 +228,7 @@ class Event
         V::doValidate($rule, $params);
         V::doValidate(V::stringType()->notEmpty(), $accessToken);
 
+
         $queues = [];
         $target = API::LIST['oneEvent'];
         $notify = 'notify_participants';
@@ -238,10 +239,60 @@ class Event
             $query = isset($item[$notify]) ? [$notify => $item[$notify]] : [];
 
             $request = $this->options
-            ->getAsync()
-            ->setPath($item['id'])
+                ->getAsync()
+                ->setPath($item['id'])
+                ->setQuery($query)
+                ->setHeaderParams($header);
+
+            $queues[] = function () use ($request, $target)
+            {
+                return $request->delete($target);
+            };
+        }
+
+        $evtID = Helper::generateArray($params, 'id');
+        $pools = $this->options->getAsync()->pool($queues, false);
+
+        return Helper::concatPoolInfos($evtID, $pools);
+    }
+
+
+    /**
+     * delete event by id
+     *
+     * @param array $params
+     * @return array
+     */
+    public function deleteEventById(string $id, bool $notify_participants = false)
+    {
+        $accessToken = $this->options->getAccessToken();
+
+        V::doValidate(V::stringType()->notEmpty(), $id);
+        V::doValidate(V::stringType()->notEmpty(), $accessToken);
+
+        $path   = $id;
+        $notify = 'notify_participants';
+        $header = ['Authorization' => $accessToken];
+        $query  = $notify_participants ? [$notify => $notify_participants] : [];
+
+
+        return $this->options
+            ->getSync()
+            ->setPath($path)
             ->setQuery($query)
-            ->setHeaderParams($header);
+            ->setHeaderParams($header)
+            ->delete(API::LIST['oneEvent']);
+
+
+        foreach ($params as $item)
+        {
+            $query = isset($item[$notify]) ? [$notify => $item[$notify]] : [];
+
+            $request = $this->options
+                ->getAsync()
+                ->setPath($item['id'])
+                ->setQuery($query)
+                ->setHeaderParams($header);
 
             $queues[] = function () use ($request, $target)
             {
@@ -265,23 +316,23 @@ class Event
     private function getBaseRules()
     {
         return
-        [
-            V::keyOptional('limit', V::intType()->min(1)),
-            V::keyOptional('offset', V::intType()->min(0)),
-            V::keyOptional('event_id', V::stringType()->notEmpty()),
-            V::keyOptional('calendar_id', V::stringType()->notEmpty()),
+            [
+                V::keyOptional('limit', V::intType()->min(1)),
+                V::keyOptional('offset', V::intType()->min(0)),
+                V::keyOptional('event_id', V::stringType()->notEmpty()),
+                V::keyOptional('calendar_id', V::stringType()->notEmpty()),
 
-            V::keyOptional('title', V::stringType()->notEmpty()),
-            V::keyOptional('location', V::stringType()->notEmpty()),
-            V::keyOptional('description', V::stringType()->notEmpty()),
-            V::keyOptional('show_cancelled', V::boolType()),
-            V::keyOptional('expand_recurring', V::boolType()),
+                V::keyOptional('title', V::stringType()->notEmpty()),
+                V::keyOptional('location', V::stringType()->notEmpty()),
+                V::keyOptional('description', V::stringType()->notEmpty()),
+                V::keyOptional('show_cancelled', V::boolType()),
+                V::keyOptional('expand_recurring', V::boolType()),
 
-            V::keyOptional('ends_after', V::timestampType()),
-            V::keyOptional('ends_before', V::timestampType()),
-            V::keyOptional('starts_after', V::timestampType()),
-            V::keyOptional('starts_before', V::timestampType())
-        ];
+                V::keyOptional('ends_after', V::timestampType()),
+                V::keyOptional('ends_before', V::timestampType()),
+                V::keyOptional('start_after', V::timestampType()),
+                V::keyOptional('start_before', V::timestampType())
+            ];
     }
 
     // ------------------------------------------------------------------------------
@@ -352,7 +403,7 @@ class Event
     {
         return V::oneOf(
 
-            // time
+        // time
             V::keySet(V::key('time', V::timestampType())),
 
             // date
