@@ -171,40 +171,33 @@ class Event
      */
     public function getEvent(array $params)
     {
-        $params      = Helper::arrayToMulti($params);
         $accessToken = $this->options->getAccessToken();
 
-        $temps = [V::key('id', V::stringType()->notEmpty())];
-        $rules = array_merge($temps, $this->getBaseRules());
+        $rules = V::keySet(
+            V::key('id', V::stringType()->notEmpty())
+        );
 
-        V::doValidate(V::keySet(...$rules), $params);
+        V::doValidate($rules, $params);
         V::doValidate(V::stringType()->notEmpty(), $accessToken);
 
         $queues = [];
         $target = API::LIST['oneEvent'];
         $header = ['Authorization' => $accessToken];
 
-        foreach ($params as $item)
+        $request = $this->options
+            ->getAsync()
+            ->setPath($params['id'])
+            ->setHeaderParams($header);
+
+        $queues[] = function () use ($request, $target)
         {
-            $id = $item['id'];
-            unset($item['id']);
-
-            $request = $this->options
-                ->getAsync()
-                ->setPath($id)
-                ->setFormParams($item)
-                ->setHeaderParams($header);
-
-            $queues[] = function () use ($request, $target)
-            {
-                return $request->get($target);
-            };
-        }
+            return $request->get($target);
+        };
 
         $evtID = Helper::generateArray($params, 'id');
         $pools = $this->options->getAsync()->pool($queues, false);
 
-        return Helper::concatPoolInfos($evtID, $pools);
+        return $pools;
     }
 
     // ------------------------------------------------------------------------------
