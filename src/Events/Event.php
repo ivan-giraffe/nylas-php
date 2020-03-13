@@ -323,8 +323,8 @@ class Event
 
                 V::keyOptional('ends_after', V::timestampType()),
                 V::keyOptional('ends_before', V::timestampType()),
-                V::keyOptional('start_after', V::timestampType()),
-                V::keyOptional('start_before', V::timestampType())
+                V::keyOptional('starts_after', V::timestampType()),
+                V::keyOptional('starts_before', V::timestampType())
             ];
     }
 
